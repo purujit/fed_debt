@@ -1,12 +1,3 @@
-[project]
-name = "fed_debt"
-version = "0.1"
-dependencies = [
-  "pandas>=2.1.1",
-  "click>=8.1.7",
-  "mypy>=1.5.1",
-]
-
 [tool.mypy]
 strict = true
 install_types = "True"

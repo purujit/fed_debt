@@ -34,8 +34,10 @@ def parse_debt_data_file(data_file: str) -> List[Debt]:
     return list(
         marketable_debts.apply(
             lambda row: Debt(
-                amount=row["Issued Amount (in Millions)"],
-                yield_rate=row["Yield"],
+                amount=float(row["Issued Amount (in Millions)"]),
+                yield_rate=float(row["Interest Rate"])
+                if row["Interest Rate"] != "null"
+                else 0.0,
                 issue_date=datetime.strptime(row["Issue Date"], "%Y-%m-%d"),
                 maturity_date=datetime.strptime(row["Maturity Date"], "%Y-%m-%d"),
             ),
