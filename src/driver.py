@@ -12,6 +12,9 @@ from debt_projector import Budget, build_debt_projection
 
 DATA_FILE = "data/MSPD_DetailSecty_20230831_20230831.csv"
 
+st.header(
+    "Estimated federal debt under different interest rate, revenue and spending assumptions"
+)
 with st.sidebar:
     spending = st.number_input(
         label="2023 Annual Spending (in millions)",
