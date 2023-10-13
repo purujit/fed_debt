@@ -86,7 +86,7 @@ debt_distribution = [
     (
         key,
         value * 100 / total,
-        short_term_interest_rate if key <= 2 else long_term_interest_rate,
+        short_term_interest_rate if key <= 24 else long_term_interest_rate,
     )
     for (key, value) in debt_total_by_term.items()
 ]
