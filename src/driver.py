@@ -107,7 +107,7 @@ data = pd.DataFrame(filter(lambda p: p.year >= datetime(2025, 1, 1), projection)
 data["label"] = data["debt_amount_eoy"].apply(lambda d: f"{int(d//1000000)}T")
 data["interest_label"] = data["interest_paid"].apply(lambda d: f"{(int)(d // 1000)}B")
 data["average_interest_rate"] = data["interest_paid"] / data["debt_amount_eoy"]
-data["disposable_revenue"] = data["spending"].apply(
+data["discretionary_spending"] = data["spending"].apply(
     lambda s: s * (1 - mandatory_spending / 100)
 )
 total_debt_line = (
@@ -137,7 +137,7 @@ st.altair_chart(chart, use_container_width=True)
 
 combined_line = (
     alt.Chart(data)
-    .transform_fold(["interest_paid", "revenue", "spending", "disposable_revenue"])
+    .transform_fold(["interest_paid", "revenue", "spending", "discretionary_spending"])
     .mark_line()
     .encode(
         x=alt.X("year", title="Year"),
