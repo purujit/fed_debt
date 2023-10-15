@@ -1,4 +1,3 @@
-import bisect
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict
@@ -10,12 +9,19 @@ import streamlit as st
 from debt_data_parser import parse_debt_data_file
 from debt_projector import Budget, build_debt_projection
 
-DATA_FILE = "data/MSPD_DetailSecty_20230831_20230831.csv"
+DATA_FILE = "data/MSPD_DetailSecty_20230930_20230930.csv"
 
+DATA_FILES = {
+    "2023-08-31": "data/MSPD_DetailSecty_20230831_20230831.csv",
+    "2023-09-30": "data/MSPD_DetailSecty_20230930_20230930.csv",
+}
 st.header(
     "Estimated federal debt under different interest rate, revenue and spending assumptions"
 )
 with st.sidebar:
+    data_file_key: str = st.selectbox(
+        label="Treasury Data Dump to Use", options=DATA_FILES.keys()
+    )
     spending = st.number_input(
         label="2023 Annual Spending (in millions)",
         min_value=5000000,
@@ -65,15 +71,28 @@ with st.sidebar:
         value=5.0,
         step=0.25,
     )
-debts = parse_debt_data_file(DATA_FILE)
+debts = parse_debt_data_file(DATA_FILES[data_file_key])
 total = 0.0
 
 
+STANDARD_TERMS = {
+    28: "4 week",
+    56: "8 week",
+    91: "13 week",
+    119: "17 week",
+    182: "26 week",
+    364: "52 week",
+    730: "2 year",
+    1825: "5 year",
+    3650: "10 year",
+    7300: "20 year",
+    10950: "30 year",
+}
+
+
 def normalize_term(term: int) -> int:
-    STANDARD_TERMS = [1, 2, 3, 4, 6, 12, 24, 60, 120, 240, 360]
-    months = term // 30
-    ip = bisect.bisect_left(STANDARD_TERMS, months)
-    return STANDARD_TERMS[ip] if ip < len(STANDARD_TERMS) else STANDARD_TERMS[-1]
+    standard_term = min([(abs(term - x), x) for x in STANDARD_TERMS])[1]
+    return standard_term
 
 
 debt_total_by_term: Dict[int, float] = defaultdict(float)
@@ -86,11 +105,29 @@ debt_distribution = [
     (
         key,
         value * 100 / total,
-        short_term_interest_rate if key <= 24 else long_term_interest_rate,
+        short_term_interest_rate if key <= 730 else long_term_interest_rate,
     )
     for (key, value) in debt_total_by_term.items()
 ]
-
+debt_coarse_distribution = {
+    "Short-term (2 years or less)": sum(
+        [x for (k, x, i) in debt_distribution if k <= 730]
+    ),
+    "Long-term (More than 2 years)": sum(
+        [x for (k, x, i) in debt_distribution if k > 730]
+    ),
+}
+dist_df = pd.DataFrame(debt_coarse_distribution.items(), columns=["term", "fraction"])
+dist_chart = (
+    alt.Chart(dist_df)
+    .mark_arc()
+    .encode(
+        theta=alt.Theta("fraction").stack(True),
+        color=alt.Color("term"),
+    )
+    .properties(title="Distribution of Short vs Long Term Debt")
+)
+st.altair_chart(dist_chart, use_container_width=True)
 projection = build_debt_projection(
     debts,
     Budget(
@@ -99,7 +136,7 @@ projection = build_debt_projection(
         annual_spending_growth_pct=spending_growth_rate,
         annual_revenue_growth_pct=revenue_growth_rate,
     ),
-    datetime.strptime("2023-09-01", "%Y-%m-%d"),
+    datetime.strptime(data_file_key, "%Y-%m-%d"),
     datetime.strptime("2043-12-01", "%Y-%m-%d"),
     new_debt_distribution=debt_distribution,
 )

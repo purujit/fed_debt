@@ -85,11 +85,11 @@ def build_debt_projection(
             if new_debt < 0:
                 # TODO: Handle surplus
                 raise ProjectionException("Unexpected surplus, giving up!")
-            for term_in_months, pct, yield_rate in new_debt_distribution:
+            for term_in_days, pct, yield_rate in new_debt_distribution:
                 new_debt_issue = Debt(
                     new_debt * pct / 100,
                     event_date,
-                    event_date + timedelta(days=(int)(term_in_months / 12 * 365)),
+                    event_date + timedelta(days=term_in_days),
                     yield_rate,
                 )
                 heapq.heappush(
